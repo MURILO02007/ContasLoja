@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gama Novaes - Controle de Contas</title>
+    
+    <!-- Adicionando Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root {
+            --primary-red: #D32F2F;
+            --light-red: #FFCDD2;
+            --dark-red: #B71C1C;
+            --white: #FFFFFF;
+            --light-gray: #F5F5F5;
+            --dark-gray: #424242;
+            --green: #4CAF50;
+            --light-green: #E8F5E9;
+            --orange: #FF9800;
+            --light-orange: #FFF3E0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+        
+        header {
+            background-color: var(--primary-red);
+            color: var(--white);
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        .section {
+            background-color: var(--white);
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        h2 {
+            color: var(--primary-red);
+            margin-bottom: 1.5rem;
+            border-bottom: 2px solid var(--light-red);
+            padding-bottom: 0.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 1rem;
+        }
+        
+        button {
+            background-color: var(--primary-red);
+            color: var(--white);
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s, transform 0.2s;
+        }
+        
+        button:hover {
+            background-color: var(--dark-red);
+            transform: translateY(-2px);
+        }
+        
+        .btn-secondary {
+            background-color: var(--light-gray);
+            color: var(--dark-gray);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #e0e0e0;
+            transform: translateY(-2px);
+        }
+        
+        .btn-pay {
+            background-color: var(--green);
+        }
+        
+        .btn-pay:hover {
+            background-color: #388E3C;
+            transform: translateY(-2px);
+        }
+        
+        .btn-reset {
+            background-color: var(--orange);
+        }
+        
+        .btn-reset:hover {
+            background-color: #F57C00;
+            transform: translateY(-2px);
+        }
+        
+        .btn-reopen {
+            background-color: var(--dark-gray);
+        }
+        
+        .btn-reopen:hover {
+            background-color: #212121;
+            transform: translateY(-2px);
+        }
+        
+        .accounts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+        
+        .account-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 1.5rem;
+            background-color: var(--white);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        
+        .account-card.overdue {
+            border-left: 5px solid var(--primary-red);
+            background-color: var(--light-red);
+            transform: scale(1.02);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .account-card.recent {
+            border-left: 5px solid var(--orange);
+            background-color: var(--light-orange);
+        }
+        
+        .account-card.paid {
+            border-left: 5px solid var(--green);
+            background-color: var(--light-green);
+            opacity: 0.8;
+        }
+        
+        .account-card.reset {
+            border-left: 5px solid var(--orange);
+            background-color: var(--light-orange);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.02); }
+            100% { transform: scale(1); }
+        }
+        
+        .account-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 0.5rem;
+        }
+        
+        .account-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-red);
+        }
+        
+        .account-phone {
+            color: var(--dark-gray);
+            font-size: 0.9rem;
+        }
+        
+        .account-date {
+            font-size: 0.8rem;
+            color: var(--dark-gray);
+            margin-top: 0.25rem;
+        }
+        
+        .product-list {
+            margin: 1rem 0;
+        }
+        
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px dotted #eee;
+        }
+        
+        .payment-info {
+            background-color: var(--light-gray);
+            padding: 0.75rem;
+            border-radius: 4px;
+            margin: 0.5rem 0;
+        }
+        
+        .payment-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            font-size: 0.9rem;
+        }
+        
+        .total {
+            font-weight: 600;
+            font-size: 1.1rem;
+            text-align: right;
+            margin-top: 1rem;
+            color: var(--primary-red);
+        }
+        
+        .total.paid {
+            color: var(--green);
+        }
+        
+        .add-product-form, .payment-form {
+            display: none;
+            margin-top: 1rem;
+            padding: 1rem;
+            background-color: var(--light-gray);
+            border-radius: 4px;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--dark-gray);
+        }
+        
+        .search-container {
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+        
+        .search-input {
+            padding-left: 2.5rem;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%23757575"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>');
+            background-repeat: no-repeat;
+            background-position: 0.75rem center;
+            background-size: 1.2rem;
+        }
+        
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: var(--dark-gray);
+            display: none;
+        }
+        
+        .sort-options {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        
+        .sort-btn {
+            background-color: transparent;
+            color: var(--dark-gray);
+            border: 1px solid #ddd;
+            padding: 0.5rem 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .sort-btn:hover {
+            background-color: var(--primary-red);
+            color: var(--white);
+            border-color: var(--primary-red);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .sort-btn.active {
+            background-color: var(--primary-red);
+            color: var(--white);
+            border-color: var(--primary-red);
+        }
+        
+        .sort-btn.active:hover {
+            background-color: var(--dark-red);
+            transform: translateY(-2px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            color: var(--dark-gray);
+        }
+        
+        @media (max-width: 768px) {
+            .accounts-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .sort-options {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Gama Novaes</h1>
+        <p>Controle de Contas a Pagar</p>
+    </header>
+    
+    <div class="container">
+        <section class="section">
+            <h2>Adicionar Nova Conta</h2>
+            <form id="accountForm">
+                <div class="form-group">
+                    <label for="customerName">Nome do Cliente</label>
+                    <input type="text" id="customerName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="phoneNumber">Número de Telefone</label>
+                    <input type="tel" id="phoneNumber" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productName">Nome do Material</label>
+                    <input type="text" id="productName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="productValue">Valor do Produto (R$)</label>
+                    <input type="number" id="productValue" step="0.01" min="0" required>
+                </div>
+                
+                <button type="submit">Adicionar Conta</button>
+            </form>
+        </section>
+        
+        <section class="section">
+            <h2>Contas Adicionadas</h2>
+            <div class="search-container">
+                <input type="text" id="searchInput" class="search-input" placeholder="Pesquisar por nome do cliente...">
+            </div>
+            
+            <div class="sort-options">
+                <button class="sort-btn active" id="sortOldest">Mais Antigas</button>
+                <button class="sort-btn" id="sortNewest">Mais Recentes</button>
+                <button class="sort-btn" id="sortPaid">Quitadas</button>
+            </div>
+            
+            <div id="accountsContainer" class="accounts-grid">
+                <div class="loading" id="loadingState">
+                    Carregando contas...
+                </div>
+                <div class="empty-state" id="emptyState">
+                    Nenhuma conta adicionada ainda. Use o formulário acima para criar a primeira conta.
+                </div>
+                <div class="no-results" id="noResults">
+                    Nenhuma conta encontrada com esse nome.
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Configuração do Firebase
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4jtlU8wG-HJKtH2DOtZdlTTUGd4Fix3U",
+            authDomain: "contasloja-3acbe.firebaseapp.com",
+            projectId: "contasloja-3acbe",
+            storageBucket: "contasloja-3acbe.firebasestorage.app",
+            messagingSenderId: "952643703609",
+            appId: "1:952643703609:web:b830ff3bee2980ada14ee8",
+            measurementId: "G-T1MFDSL824"
+        };
+
+        // Inicializar Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Array para armazenar as contas
+        let accounts = [];
+        let currentSort = 'oldest'; // Padrão: ordenar por mais antigas
+        
+        // Elementos do DOM
+        const accountForm = document.getElementById('accountForm');
+        const accountsContainer = document.getElementById('accountsContainer');
+        const loadingState = document.getElementById('loadingState');
+        const emptyState = document.getElementById('emptyState');
+        const searchInput = document.getElementById('searchInput');
+        const noResults = document.getElementById('noResults');
+        const sortOldest = document.getElementById('sortOldest');
+        const sortNewest = document.getElementById('sortNewest');
+        const sortPaid = document.getElementById('sortPaid');
+        
+        // Função para formatar valor em real
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+            }).format(value);
+        }
+        
+        // Função para formatar data
+        function formatDate(date) {
+            return new Intl.DateTimeFormat('pt-BR').format(date);
+        }
+        
+        // Função para calcular o total de uma conta
+        function calculateTotal(products) {
+            return products.reduce((total, product) => total + product.value, 0);
+        }
+        
+        // Função para calcular o total pago
+        function calculatePaid(payments) {
+            return payments.reduce((total, payment) => total + payment.amount, 0);
+        }
+        
+        // Função para calcular dias desde a criação da conta
+        function getDaysSinceCreation(creationDate) {
+            const today = new Date();
+            const creation = new Date(creationDate);
+            const diffTime = Math.abs(today - creation);
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+        
+        // Função para determinar a classe da conta baseada na idade
+        function getAccountClass(creationDate, total, paid) {
+            const days = getDaysSinceCreation(creationDate);
+            
+            if (paid >= total) {
+                return 'paid';
+            } else if (days > 30) {
+                return 'overdue';
+            } else if (days > 7) {
+                return 'recent';
+            }
+            
+            return '';
+        }
+        
+        // Função para filtrar contas pelo nome
+        function filterAccounts(searchTerm) {
+            if (!searchTerm) {
+                return accounts;
+            }
+            
+            const lowerSearchTerm = searchTerm.toLowerCase();
+            return accounts.filter(account => 
+                account.customerName.toLowerCase().includes(lowerSearchTerm)
+            );
+        }
+        
+        // Função para ordenar contas
+        function sortAccounts(accountsToSort, sortBy) {
+            const sortedAccounts = [...accountsToSort];
+            
+            switch(sortBy) {
+                case 'newest':
+                    return sortedAccounts.sort((a, b) => new Date(b.creationDate) - new Date(a.creationDate));
+                case 'paid':
+                    return sortedAccounts.filter(account => {
+                        const total = calculateTotal(account.products);
+                        const paid = calculatePaid(account.payments);
+                        return paid >= total;
+                    }).sort((a, b) => new Date(b.lastPaymentDate || b.creationDate) - new Date(a.lastPaymentDate || a.creationDate));
+                case 'oldest':
+                default:
+                    return sortedAccounts.filter(account => {
+                        const total = calculateTotal(account.products);
+                        const paid = calculatePaid(account.payments);
+                        return paid < total;
+                    }).sort((a, b) => new Date(a.creationDate) - new Date(b.creationDate));
+            }
+        }
+        
+        // Função para reabrir uma conta quitada - MODIFICADA
+        async function reopenAccount(accountId) {
+            if (confirm('Tem certeza que deseja reabrir esta conta? Todos os produtos e pagamentos serão removidos, e uma nova conta será criada com o mesmo cliente.')) {
+                const accountIndex = accounts.findIndex(acc => acc.id === accountId);
+                if (accountIndex === -1) return;
+                
+                // Criar uma nova conta com os mesmos dados do cliente, mas sem produtos e pagamentos
+                const reopenedAccount = {
+                    customerName: accounts[accountIndex].customerName,
+                    phoneNumber: accounts[accountIndex].phoneNumber,
+                    products: [], // Zera os produtos
+                    payments: [], // Zera os pagamentos
+                    creationDate: new Date().toISOString(), // Nova data de criação
+                    lastPaymentDate: null
+                };
+                
+                // Atualizar no Firebase
+                try {
+                    await db.collection('accounts').doc(accountId).update(reopenedAccount);
+                    
+                    // Atualizar localmente
+                    accounts[accountIndex] = {
+                        ...reopenedAccount,
+                        id: accountId // Manter o mesmo ID
+                    };
+                    
+                    // Atualizar a exibição
+                    const currentSearch = searchInput.value;
+                    renderAccounts(currentSearch);
+                    
+                    alert('Conta reaberta com sucesso! Agora você pode adicionar novos produtos a esta conta.');
+                } catch (error) {
+                    console.error('Erro ao reabrir conta:', error);
+                    alert('Erro ao reabrir conta. Tente novamente.');
+                }
+            }
+        }
+        
+        // Função para renderizar as contas
+        function renderAccounts(searchTerm = '') {
+            const filteredAccounts = filterAccounts(searchTerm);
+            const sortedAccounts = sortAccounts(filteredAccounts, currentSort);
+            
+            if (accounts.length === 0) {
+                loadingState.style.display = 'none';
+                emptyState.style.display = 'block';
+                noResults.style.display = 'none';
+                return;
+            }
+            
+            loadingState.style.display = 'none';
+            emptyState.style.display = 'none';
+            
+            if (sortedAccounts.length === 0) {
+                noResults.style.display = 'block';
+                accountsContainer.innerHTML = '';
+                return;
+            }
+            
+            noResults.style.display = 'none';
+            accountsContainer.innerHTML = '';
+            
+            sortedAccounts.forEach((account, index) => {
+                const total = calculateTotal(account.products);
+                const paid = calculatePaid(account.payments);
+                const remaining = total - paid;
+                const accountClass = getAccountClass(account.creationDate, total, paid);
+                const daysSinceCreation = getDaysSinceCreation(account.creationDate);
+                const isReset = daysSinceCreation === 0 && paid === 0;
+                const isPaid = paid >= total;
+                
+                const accountCard = document.createElement('div');
+                accountCard.className = `account-card ${accountClass} ${isReset ? 'reset' : ''}`;
+                accountCard.innerHTML = `
+                    <div class="account-header">
+                        <div>
+                            <div class="account-name">${account.customerName}</div>
+                            <div class="account-phone">${account.phoneNumber}</div>
+                            <div class="account-date">Criada em: ${formatDate(new Date(account.creationDate))} (${daysSinceCreation} dias)</div>
+                        </div>
+                        <div>
+                            ${!isPaid ? `<button class="btn-secondary" onclick="toggleAddProductForm('${account.id}')">+ Produto</button>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="product-list">
+                        ${account.products.map(product => `
+                            <div class="product-item">
+                                <span>${product.name}</span>
+                                <span>${formatCurrency(product.value)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    ${account.payments.length > 0 ? `
+                    <div class="payment-info">
+                        <strong>Pagamentos Realizados:</strong>
+                        ${account.payments.map(payment => `
+                            <div class="payment-item">
+                                <span>${formatDate(new Date(payment.date))}</span>
+                                <span>${formatCurrency(payment.amount)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    ` : ''}
+                    
+                    <div class="total ${isPaid ? 'paid' : ''}">
+                        Total: ${formatCurrency(total)}<br>
+                        ${paid > 0 ? `Pago: ${formatCurrency(paid)}<br>` : ''}
+                        ${remaining > 0 ? `Restante: ${formatCurrency(remaining)}` : 'CONTA QUITADA'}
+                    </div>
+                    
+                    <div class="actions">
+                        ${!isPaid ? `
+                        <button class="btn-pay" onclick="togglePaymentForm('${account.id}')">Registrar Pagamento</button>
+                        ` : ''}
+                        
+                        ${!isPaid ? `
+                        <button class="btn-secondary" onclick="toggleAddProductForm('${account.id}')">+ Produto</button>
+                        ` : ''}
+                        
+                        ${isPaid ? `
+                        <button class="btn-reopen" onclick="reopenAccount('${account.id}')">Reabrir Conta</button>
+                        ` : ''}
+                    </div>
+                    
+                    ${!isPaid ? `
+                    <div class="add-product-form" id="addProductForm-${account.id}">
+                        <div class="form-group">
+                            <label for="newProductName-${account.id}">Nome do Material</label>
+                            <input type="text" id="newProductName-${account.id}" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="newProductValue-${account.id}">Valor (R$)</label>
+                            <input type="number" id="newProductValue-${account.id}" step="0.01" min="0" required>
+                        </div>
+                        <div class="actions">
+                            <button type="button" onclick="addProductToAccount('${account.id}')">Adicionar</button>
+                            <button type="button" class="btn-secondary" onclick="toggleAddProductForm('${account.id}')">Cancelar</button>
+                        </div>
+                    </div>
+                    
+                    <div class="payment-form" id="paymentForm-${account.id}">
+                        <div class="form-group">
+                            <label for="paymentAmount-${account.id}">Valor do Pagamento (R$)</label>
+                            <input type="number" id="paymentAmount-${account.id}" step="0.01" min="0.01" max="${remaining}" value="${remaining}" required>
+                            <small>Máximo: ${formatCurrency(remaining)}</small>
+                        </div>
+                        <div class="actions">
+                            <button type="button" class="btn-pay" onclick="registerPayment('${account.id}')">Registrar Pagamento</button>
+                            <button type="button" class="btn-secondary" onclick="togglePaymentForm('${account.id}')">Cancelar</button>
+                        </div>
+                    </div>
+                    ` : ''}
+                `;
+                
+                accountsContainer.appendChild(accountCard);
+            });
+        }
+        
+        // Função para alternar o formulário de adicionar produto
+        function toggleAddProductForm(accountId) {
+            const form = document.getElementById(`addProductForm-${accountId}`);
+            if (form.style.display === 'block') {
+                form.style.display = 'none';
+            } else {
+                form.style.display = 'block';
+                // Fechar outros formulários abertos
+                document.querySelectorAll('.add-product-form').forEach(f => {
+                    if (f.id !== `addProductForm-${accountId}`) f.style.display = 'none';
+                });
+                document.querySelectorAll('.payment-form').forEach(f => f.style.display = 'none');
+            }
+        }
+        
+        // Função para alternar o formulário de pagamento
+        function togglePaymentForm(accountId) {
+            const form = document.getElementById(`paymentForm-${accountId}`);
+            if (form.style.display === 'block') {
+                form.style.display = 'none';
+            } else {
+                form.style.display = 'block';
+                // Fechar outros formulários abertos
+                document.querySelectorAll('.payment-form').forEach(f => {
+                    if (f.id !== `paymentForm-${accountId}`) f.style.display = 'none';
+                });
+                document.querySelectorAll('.add-product-form').forEach(f => f.style.display = 'none');
+                
+                // Atualizar o valor máximo do pagamento
+                const account = accounts.find(acc => acc.id === accountId);
+                if (account) {
+                    const total = calculateTotal(account.products);
+                    const paid = calculatePaid(account.payments);
+                    const remaining = total - paid;
+                    document.getElementById(`paymentAmount-${accountId}`).max = remaining;
+                    document.getElementById(`paymentAmount-${accountId}`).value = remaining;
+                }
+            }
+        }
+        
+        // Função para adicionar produto a uma conta existente
+        async function addProductToAccount(accountId) {
+            const productName = document.getElementById(`newProductName-${accountId}`).value;
+            const productValue = parseFloat(document.getElementById(`newProductValue-${accountId}`).value);
+            
+            if (!productName || isNaN(productValue) || productValue <= 0) {
+                alert('Por favor, preencha todos os campos corretamente.');
+                return;
+            }
+            
+            const accountIndex = accounts.findIndex(acc => acc.id === accountId);
+            if (accountIndex === -1) return;
+            
+            accounts[accountIndex].products.push({
+                name: productName,
+                value: productValue
+            });
+            
+            // Atualizar no Firebase
+            try {
+                await db.collection('accounts').doc(accountId).update({
+                    products: accounts[accountIndex].products
+                });
+                
+                // Limpar os campos do formulário
+                document.getElementById(`newProductName-${accountId}`).value = '';
+                document.getElementById(`newProductValue-${accountId}`).value = '';
+                
+                // Atualizar a exibição mantendo a pesquisa atual
+                const currentSearch = searchInput.value;
+                renderAccounts(currentSearch);
+                
+                // Fechar o formulário
+                toggleAddProductForm(accountId);
+            } catch (error) {
+                console.error('Erro ao adicionar produto:', error);
+                alert('Erro ao adicionar produto. Tente novamente.');
+            }
+        }
+        
+        // Função para registrar um pagamento
+        async function registerPayment(accountId) {
+            const paymentAmount = parseFloat(document.getElementById(`paymentAmount-${accountId}`).value);
+            const accountIndex = accounts.findIndex(acc => acc.id === accountId);
+            if (accountIndex === -1) return;
+            
+            const account = accounts[accountIndex];
+            const total = calculateTotal(account.products);
+            const paid = calculatePaid(account.payments);
+            const remaining = total - paid;
+            
+            if (isNaN(paymentAmount) || paymentAmount <= 0 || paymentAmount > remaining) {
+                alert('Por favor, insira um valor válido para o pagamento.');
+                return;
+            }
+            
+            account.payments.push({
+                amount: paymentAmount,
+                date: new Date().toISOString()
+            });
+            
+            // Atualizar a data do último pagamento
+            account.lastPaymentDate = new Date().toISOString();
+            
+            // Atualizar no Firebase
+            try {
+                await db.collection('accounts').doc(accountId).update({
+                    payments: account.payments,
+                    lastPaymentDate: account.lastPaymentDate
+                });
+                
+                // Se a conta foi totalmente paga, perguntar se deseja reabrir
+                const newPaid = calculatePaid(account.payments);
+                if (newPaid >= total) {
+                    setTimeout(() => {
+                        alert('Conta quitada com sucesso! Ela agora aparecerá na aba "Quitadas".');
+                    }, 500);
+                }
+                
+                // Atualizar a exibição mantendo a pesquisa atual
+                const currentSearch = searchInput.value;
+                renderAccounts(currentSearch);
+                
+                // Fechar o formulário
+                togglePaymentForm(accountId);
+                
+                alert(`Pagamento de ${formatCurrency(paymentAmount)} registrado com sucesso!`);
+            } catch (error) {
+                console.error('Erro ao registrar pagamento:', error);
+                alert('Erro ao registrar pagamento. Tente novamente.');
+            }
+        }
+        
+        // Event listener para o formulário de adicionar conta
+        accountForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const customerName = document.getElementById('customerName').value;
+            const phoneNumber = document.getElementById('phoneNumber').value;
+            const productName = document.getElementById('productName').value;
+            const productValue = parseFloat(document.getElementById('productValue').value);
+            
+            // Validar os dados
+            if (!customerName || !phoneNumber || !productName || isNaN(productValue) || productValue <= 0) {
+                alert('Por favor, preencha todos os campos corretamente.');
+                return;
+            }
+            
+            // Criar objeto da conta
+            const newAccount = {
+                customerName,
+                phoneNumber,
+                products: [{
+                    name: productName,
+                    value: productValue
+                }],
+                payments: [],
+                creationDate: new Date().toISOString()
+            };
+            
+            // Adicionar ao Firebase
+            try {
+                const docRef = await db.collection('accounts').add(newAccount);
+                newAccount.id = docRef.id;
+                accounts.push(newAccount);
+                
+                // Limpar o formulário
+                accountForm.reset();
+                
+                // Atualizar a exibição mantendo a pesquisa atual
+                const currentSearch = searchInput.value;
+                renderAccounts(currentSearch);
+                
+                alert('Conta adicionada com sucesso!');
+            } catch (error) {
+                console.error('Erro ao adicionar conta:', error);
+                alert('Erro ao adicionar conta. Tente novamente.');
+            }
+        });
+        
+        // Event listener para a barra de pesquisa
+        searchInput.addEventListener('input', function() {
+            renderAccounts(this.value);
+        });
+        
+        // Event listeners para os botões de ordenação
+        sortOldest.addEventListener('click', function() {
+            currentSort = 'oldest';
+            updateSortButtons();
+            renderAccounts(searchInput.value);
+        });
+        
+        sortNewest.addEventListener('click', function() {
+            currentSort = 'newest';
+            updateSortButtons();
+            renderAccounts(searchInput.value);
+        });
+        
+        sortPaid.addEventListener('click', function() {
+            currentSort = 'paid';
+            updateSortButtons();
+            renderAccounts(searchInput.value);
+        });
+        
+        // Função para atualizar o estado dos botões de ordenação
+        function updateSortButtons() {
+            [sortOldest, sortNewest, sortPaid].forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            document.getElementById(`sort${currentSort.charAt(0).toUpperCase() + currentSort.slice(1)}`).classList.add('active');
+        }
+        
+        // Carregar contas do Firebase
+        async function loadAccounts() {
+            try {
+                const snapshot = await db.collection('accounts').get();
+                accounts = [];
+                snapshot.forEach(doc => {
+                    const account = doc.data();
+                    account.id = doc.id;
+                    accounts.push(account);
+                });
+                
+                renderAccounts();
+            } catch (error) {
+                console.error('Erro ao carregar contas:', error);
+                loadingState.textContent = 'Erro ao carregar contas. Tente recarregar a página.';
+            }
+        }
+        
+        // Inicializar a página
+        loadAccounts();
+    </script>
+</body>
+</html>
