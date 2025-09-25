@@ -21,6 +21,8 @@
             --light-green: #E8F5E9;
             --orange: #FF9800;
             --light-orange: #FFF3E0;
+            --blue: #2196F3;
+            --light-blue: #E3F2FD;
         }
         
         * {
@@ -138,6 +140,15 @@
         
         .btn-reopen:hover {
             background-color: #212121;
+            transform: translateY(-2px);
+        }
+        
+        .btn-delete {
+            background-color: #f44336;
+        }
+        
+        .btn-delete:hover {
+            background-color: #d32f2f;
             transform: translateY(-2px);
         }
         
@@ -329,6 +340,67 @@
             color: var(--dark-gray);
         }
         
+        /* Novos estilos para as abas */
+        .tabs-container {
+            margin-bottom: 2rem;
+        }
+        
+        .tabs {
+            display: flex;
+            background-color: var(--white);
+            border-radius: 8px 8px 0 0;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 1rem;
+            text-align: center;
+            background-color: var(--light-gray);
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .tab.active {
+            background-color: var(--white);
+            border-bottom: 3px solid var(--primary-red);
+            color: var(--primary-red);
+        }
+        
+        .tab-content {
+            display: none;
+            background-color: var(--white);
+            border-radius: 0 0 8px 8px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .tab-badge {
+            background-color: var(--primary-red);
+            color: var(--white);
+            border-radius: 50%;
+            padding: 0.2rem 0.5rem;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+        }
+        
+        .tab.active .tab-badge {
+            background-color: var(--dark-red);
+        }
+        
         @media (max-width: 768px) {
             .accounts-grid {
                 grid-template-columns: 1fr;
@@ -344,6 +416,20 @@
             
             .sort-options {
                 flex-direction: column;
+            }
+            
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab {
+                border-bottom: 1px solid #ddd;
+                border-right: none;
+            }
+            
+            .tab.active {
+                border-bottom: 3px solid var(--primary-red);
+                border-right: none;
             }
         }
     </style>
@@ -383,26 +469,63 @@
         </section>
         
         <section class="section">
-            <h2>Contas Adicionadas</h2>
-            <div class="search-container">
-                <input type="text" id="searchInput" class="search-input" placeholder="Pesquisar por nome do cliente...">
-            </div>
+            <h2>Contas dos Clientes</h2>
             
-            <div class="sort-options">
-                <button class="sort-btn active" id="sortOldest">Mais Antigas</button>
-                <button class="sort-btn" id="sortNewest">Mais Recentes</button>
-                <button class="sort-btn" id="sortPaid">Quitadas</button>
-            </div>
-            
-            <div id="accountsContainer" class="accounts-grid">
-                <div class="loading" id="loadingState">
-                    Carregando contas...
+            <div class="tabs-container">
+                <div class="tabs">
+                    <button class="tab active" data-tab="active-accounts">
+                        Contas Ativas <span class="tab-badge" id="active-count">0</span>
+                    </button>
+                    <button class="tab" data-tab="paid-accounts">
+                        Contas Quitadas <span class="tab-badge" id="paid-count">0</span>
+                    </button>
                 </div>
-                <div class="empty-state" id="emptyState">
-                    Nenhuma conta adicionada ainda. Use o formulário acima para criar a primeira conta.
+                
+                <div class="tab-content active" id="active-accounts-content">
+                    <div class="search-container">
+                        <input type="text" id="searchInputActive" class="search-input" placeholder="Pesquisar por nome do cliente...">
+                    </div>
+                    
+                    <div class="sort-options">
+                        <button class="sort-btn active" id="sortOldest">Mais Antigas</button>
+                        <button class="sort-btn" id="sortNewest">Mais Recentes</button>
+                        <button class="sort-btn" id="sortOverdue">Em Atraso</button>
+                    </div>
+                    
+                    <div id="activeAccountsContainer" class="accounts-grid">
+                        <div class="loading" id="loadingActiveState">
+                            Carregando contas ativas...
+                        </div>
+                        <div class="empty-state" id="emptyActiveState">
+                            Nenhuma conta ativa no momento.
+                        </div>
+                        <div class="no-results" id="noResultsActive">
+                            Nenhuma conta ativa encontrada com esse nome.
+                        </div>
+                    </div>
                 </div>
-                <div class="no-results" id="noResults">
-                    Nenhuma conta encontrada com esse nome.
+                
+                <div class="tab-content" id="paid-accounts-content">
+                    <div class="search-container">
+                        <input type="text" id="searchInputPaid" class="search-input" placeholder="Pesquisar por nome do cliente...">
+                    </div>
+                    
+                    <div class="sort-options">
+                        <button class="sort-btn active" id="sortPaidNewest">Mais Recentes</button>
+                        <button class="sort-btn" id="sortPaidOldest">Mais Antigas</button>
+                    </div>
+                    
+                    <div id="paidAccountsContainer" class="accounts-grid">
+                        <div class="loading" id="loadingPaidState">
+                            Carregando contas quitadas...
+                        </div>
+                        <div class="empty-state" id="emptyPaidState">
+                            Nenhuma conta quitada ainda.
+                        </div>
+                        <div class="no-results" id="noResultsPaid">
+                            Nenhuma conta quitada encontrada com esse nome.
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>
@@ -426,18 +549,36 @@
 
         // Array para armazenar as contas
         let accounts = [];
-        let currentSort = 'oldest'; // Padrão: ordenar por mais antigas
+        let currentActiveSort = 'oldest'; // Padrão: ordenar por mais antigas
+        let currentPaidSort = 'newest'; // Padrão: ordenar por mais recentes
         
         // Elementos do DOM
         const accountForm = document.getElementById('accountForm');
-        const accountsContainer = document.getElementById('accountsContainer');
-        const loadingState = document.getElementById('loadingState');
-        const emptyState = document.getElementById('emptyState');
-        const searchInput = document.getElementById('searchInput');
-        const noResults = document.getElementById('noResults');
+        const activeAccountsContainer = document.getElementById('activeAccountsContainer');
+        const paidAccountsContainer = document.getElementById('paidAccountsContainer');
+        const loadingActiveState = document.getElementById('loadingActiveState');
+        const loadingPaidState = document.getElementById('loadingPaidState');
+        const emptyActiveState = document.getElementById('emptyActiveState');
+        const emptyPaidState = document.getElementById('emptyPaidState');
+        const searchInputActive = document.getElementById('searchInputActive');
+        const searchInputPaid = document.getElementById('searchInputPaid');
+        const noResultsActive = document.getElementById('noResultsActive');
+        const noResultsPaid = document.getElementById('noResultsPaid');
+        const activeCountBadge = document.getElementById('active-count');
+        const paidCountBadge = document.getElementById('paid-count');
+        
+        // Elementos de ordenação para contas ativas
         const sortOldest = document.getElementById('sortOldest');
         const sortNewest = document.getElementById('sortNewest');
-        const sortPaid = document.getElementById('sortPaid');
+        const sortOverdue = document.getElementById('sortOverdue');
+        
+        // Elementos de ordenação para contas quitadas
+        const sortPaidNewest = document.getElementById('sortPaidNewest');
+        const sortPaidOldest = document.getElementById('sortPaidOldest');
+        
+        // Elementos das abas
+        const tabs = document.querySelectorAll('.tab');
+        const tabContents = document.querySelectorAll('.tab-content');
         
         // Função para formatar valor em real
         function formatCurrency(value) {
@@ -470,13 +611,24 @@
             return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         }
         
+        // Função para determinar se uma conta está em atraso
+        function isOverdue(creationDate, total, paid) {
+            const days = getDaysSinceCreation(creationDate);
+            return days > 30 && paid < total;
+        }
+        
+        // Função para determinar se uma conta está quitada
+        function isPaid(total, paid) {
+            return paid >= total;
+        }
+        
         // Função para determinar a classe da conta baseada na idade
         function getAccountClass(creationDate, total, paid) {
             const days = getDaysSinceCreation(creationDate);
             
-            if (paid >= total) {
+            if (isPaid(total, paid)) {
                 return 'paid';
-            } else if (days > 30) {
+            } else if (isOverdue(creationDate, total, paid)) {
                 return 'overdue';
             } else if (days > 7) {
                 return 'recent';
@@ -486,101 +638,112 @@
         }
         
         // Função para filtrar contas pelo nome
-        function filterAccounts(searchTerm) {
+        function filterAccounts(accountsToFilter, searchTerm) {
             if (!searchTerm) {
-                return accounts;
+                return accountsToFilter;
             }
             
             const lowerSearchTerm = searchTerm.toLowerCase();
-            return accounts.filter(account => 
+            return accountsToFilter.filter(account => 
                 account.customerName.toLowerCase().includes(lowerSearchTerm)
             );
         }
         
-        // Função para ordenar contas
-        function sortAccounts(accountsToSort, sortBy) {
+        // Função para separar contas ativas e quitadas
+        function separateAccounts() {
+            const activeAccounts = accounts.filter(account => {
+                const total = calculateTotal(account.products);
+                const paid = calculatePaid(account.payments);
+                return !isPaid(total, paid);
+            });
+            
+            const paidAccounts = accounts.filter(account => {
+                const total = calculateTotal(account.products);
+                const paid = calculatePaid(account.payments);
+                return isPaid(total, paid);
+            });
+            
+            return { activeAccounts, paidAccounts };
+        }
+        
+        // Função para ordenar contas ativas
+        function sortActiveAccounts(accountsToSort, sortBy) {
             const sortedAccounts = [...accountsToSort];
             
             switch(sortBy) {
                 case 'newest':
                     return sortedAccounts.sort((a, b) => new Date(b.creationDate) - new Date(a.creationDate));
-                case 'paid':
+                case 'overdue':
                     return sortedAccounts.filter(account => {
                         const total = calculateTotal(account.products);
                         const paid = calculatePaid(account.payments);
-                        return paid >= total;
-                    }).sort((a, b) => new Date(b.lastPaymentDate || b.creationDate) - new Date(a.lastPaymentDate || a.creationDate));
+                        return isOverdue(account.creationDate, total, paid);
+                    }).sort((a, b) => new Date(a.creationDate) - new Date(b.creationDate));
                 case 'oldest':
                 default:
-                    return sortedAccounts.filter(account => {
-                        const total = calculateTotal(account.products);
-                        const paid = calculatePaid(account.payments);
-                        return paid < total;
-                    }).sort((a, b) => new Date(a.creationDate) - new Date(b.creationDate));
+                    return sortedAccounts.sort((a, b) => new Date(a.creationDate) - new Date(b.creationDate));
             }
         }
         
-        // Função para reabrir uma conta quitada - MODIFICADA
-        async function reopenAccount(accountId) {
-            if (confirm('Tem certeza que deseja reabrir esta conta? Todos os produtos e pagamentos serão removidos, e uma nova conta será criada com o mesmo cliente.')) {
-                const accountIndex = accounts.findIndex(acc => acc.id === accountId);
-                if (accountIndex === -1) return;
-                
-                // Criar uma nova conta com os mesmos dados do cliente, mas sem produtos e pagamentos
-                const reopenedAccount = {
-                    customerName: accounts[accountIndex].customerName,
-                    phoneNumber: accounts[accountIndex].phoneNumber,
-                    products: [], // Zera os produtos
-                    payments: [], // Zera os pagamentos
-                    creationDate: new Date().toISOString(), // Nova data de criação
-                    lastPaymentDate: null
-                };
-                
-                // Atualizar no Firebase
+        // Função para ordenar contas quitadas
+        function sortPaidAccounts(accountsToSort, sortBy) {
+            const sortedAccounts = [...accountsToSort];
+            
+            switch(sortBy) {
+                case 'oldest':
+                    return sortedAccounts.sort((a, b) => new Date(a.lastPaymentDate || a.creationDate) - new Date(b.lastPaymentDate || b.creationDate));
+                case 'newest':
+                default:
+                    return sortedAccounts.sort((a, b) => new Date(b.lastPaymentDate || b.creationDate) - new Date(a.lastPaymentDate || a.creationDate));
+            }
+        }
+        
+        // Função para apagar uma conta
+        async function deleteAccount(accountId, accountName) {
+            if (confirm(`Tem certeza que deseja APAGAR permanentemente a conta de ${accountName}? Esta ação não pode ser desfeita!`)) {
                 try {
-                    await db.collection('accounts').doc(accountId).update(reopenedAccount);
+                    // Apagar do Firebase
+                    await db.collection('accounts').doc(accountId).delete();
                     
-                    // Atualizar localmente
-                    accounts[accountIndex] = {
-                        ...reopenedAccount,
-                        id: accountId // Manter o mesmo ID
-                    };
+                    // Remover localmente
+                    accounts = accounts.filter(account => account.id !== accountId);
                     
                     // Atualizar a exibição
-                    const currentSearch = searchInput.value;
-                    renderAccounts(currentSearch);
+                    updateAccountsDisplay();
                     
-                    alert('Conta reaberta com sucesso! Agora você pode adicionar novos produtos a esta conta.');
+                    alert('Conta apagada com sucesso!');
                 } catch (error) {
-                    console.error('Erro ao reabrir conta:', error);
-                    alert('Erro ao reabrir conta. Tente novamente.');
+                    console.error('Erro ao apagar conta:', error);
+                    alert('Erro ao apagar conta. Tente novamente.');
                 }
             }
         }
         
-        // Função para renderizar as contas
-        function renderAccounts(searchTerm = '') {
-            const filteredAccounts = filterAccounts(searchTerm);
-            const sortedAccounts = sortAccounts(filteredAccounts, currentSort);
+        // Função para renderizar as contas ativas
+        function renderActiveAccounts(searchTerm = '') {
+            const { activeAccounts } = separateAccounts();
+            const filteredAccounts = filterAccounts(activeAccounts, searchTerm);
+            const sortedAccounts = sortActiveAccounts(filteredAccounts, currentActiveSort);
             
-            if (accounts.length === 0) {
-                loadingState.style.display = 'none';
-                emptyState.style.display = 'block';
-                noResults.style.display = 'none';
+            if (activeAccounts.length === 0) {
+                loadingActiveState.style.display = 'none';
+                emptyActiveState.style.display = 'block';
+                noResultsActive.style.display = 'none';
+                activeAccountsContainer.innerHTML = '';
                 return;
             }
             
-            loadingState.style.display = 'none';
-            emptyState.style.display = 'none';
+            loadingActiveState.style.display = 'none';
+            emptyActiveState.style.display = 'none';
             
             if (sortedAccounts.length === 0) {
-                noResults.style.display = 'block';
-                accountsContainer.innerHTML = '';
+                noResultsActive.style.display = 'block';
+                activeAccountsContainer.innerHTML = '';
                 return;
             }
             
-            noResults.style.display = 'none';
-            accountsContainer.innerHTML = '';
+            noResultsActive.style.display = 'none';
+            activeAccountsContainer.innerHTML = '';
             
             sortedAccounts.forEach((account, index) => {
                 const total = calculateTotal(account.products);
@@ -589,7 +752,7 @@
                 const accountClass = getAccountClass(account.creationDate, total, paid);
                 const daysSinceCreation = getDaysSinceCreation(account.creationDate);
                 const isReset = daysSinceCreation === 0 && paid === 0;
-                const isPaid = paid >= total;
+                const hasProducts = account.products.length > 0;
                 
                 const accountCard = document.createElement('div');
                 accountCard.className = `account-card ${accountClass} ${isReset ? 'reset' : ''}`;
@@ -601,10 +764,11 @@
                             <div class="account-date">Criada em: ${formatDate(new Date(account.creationDate))} (${daysSinceCreation} dias)</div>
                         </div>
                         <div>
-                            ${!isPaid ? `<button class="btn-secondary" onclick="toggleAddProductForm('${account.id}')">+ Produto</button>` : ''}
+                            <button class="btn-secondary" onclick="toggleAddProductForm('${account.id}', 'active')">+ Produto</button>
                         </div>
                     </div>
                     
+                    ${hasProducts ? `
                     <div class="product-list">
                         ${account.products.map(product => `
                             <div class="product-item">
@@ -613,6 +777,7 @@
                             </div>
                         `).join('')}
                     </div>
+                    ` : '<div class="empty-state" style="padding: 1rem; font-style: italic;">Nenhum produto adicionado</div>'}
                     
                     ${account.payments.length > 0 ? `
                     <div class="payment-info">
@@ -626,87 +791,171 @@
                     </div>
                     ` : ''}
                     
-                    <div class="total ${isPaid ? 'paid' : ''}">
-                        Total: ${formatCurrency(total)}<br>
-                        ${paid > 0 ? `Pago: ${formatCurrency(paid)}<br>` : ''}
-                        ${remaining > 0 ? `Restante: ${formatCurrency(remaining)}` : 'CONTA QUITADA'}
+                    <div class="total">
+                        ${hasProducts ? `
+                            Total: ${formatCurrency(total)}<br>
+                            ${paid > 0 ? `Pago: ${formatCurrency(paid)}<br>` : ''}
+                            Restante: ${formatCurrency(remaining)}
+                        ` : 'Conta vazia - Adicione produtos'}
                     </div>
                     
                     <div class="actions">
-                        ${!isPaid ? `
-                        <button class="btn-pay" onclick="togglePaymentForm('${account.id}')">Registrar Pagamento</button>
-                        ` : ''}
-                        
-                        ${!isPaid ? `
-                        <button class="btn-secondary" onclick="toggleAddProductForm('${account.id}')">+ Produto</button>
-                        ` : ''}
-                        
-                        ${isPaid ? `
-                        <button class="btn-reopen" onclick="reopenAccount('${account.id}')">Reabrir Conta</button>
-                        ` : ''}
+                        ${hasProducts ? `<button class="btn-pay" onclick="togglePaymentForm('${account.id}', 'active')">Registrar Pagamento</button>` : ''}
+                        <button class="btn-secondary" onclick="toggleAddProductForm('${account.id}', 'active')">+ Produto</button>
+                        <button class="btn-delete" onclick="deleteAccount('${account.id}', '${account.customerName}')">Apagar Conta</button>
                     </div>
                     
-                    ${!isPaid ? `
-                    <div class="add-product-form" id="addProductForm-${account.id}">
+                    <div class="add-product-form" id="addProductForm-active-${account.id}">
                         <div class="form-group">
-                            <label for="newProductName-${account.id}">Nome do Material</label>
-                            <input type="text" id="newProductName-${account.id}" required>
+                            <label for="newProductName-active-${account.id}">Nome do Material</label>
+                            <input type="text" id="newProductName-active-${account.id}" required>
                         </div>
                         <div class="form-group">
-                            <label for="newProductValue-${account.id}">Valor (R$)</label>
-                            <input type="number" id="newProductValue-${account.id}" step="0.01" min="0" required>
+                            <label for="newProductValue-active-${account.id}">Valor (R$)</label>
+                            <input type="number" id="newProductValue-active-${account.id}" step="0.01" min="0" required>
                         </div>
                         <div class="actions">
-                            <button type="button" onclick="addProductToAccount('${account.id}')">Adicionar</button>
-                            <button type="button" class="btn-secondary" onclick="toggleAddProductForm('${account.id}')">Cancelar</button>
+                            <button type="button" onclick="addProductToAccount('${account.id}', 'active')">Adicionar</button>
+                            <button type="button" class="btn-secondary" onclick="toggleAddProductForm('${account.id}', 'active')">Cancelar</button>
                         </div>
                     </div>
                     
-                    <div class="payment-form" id="paymentForm-${account.id}">
+                    ${hasProducts ? `
+                    <div class="payment-form" id="paymentForm-active-${account.id}">
                         <div class="form-group">
-                            <label for="paymentAmount-${account.id}">Valor do Pagamento (R$)</label>
-                            <input type="number" id="paymentAmount-${account.id}" step="0.01" min="0.01" max="${remaining}" value="${remaining}" required>
+                            <label for="paymentAmount-active-${account.id}">Valor do Pagamento (R$)</label>
+                            <input type="number" id="paymentAmount-active-${account.id}" step="0.01" min="0.01" max="${remaining}" value="${remaining}" required>
                             <small>Máximo: ${formatCurrency(remaining)}</small>
                         </div>
                         <div class="actions">
-                            <button type="button" class="btn-pay" onclick="registerPayment('${account.id}')">Registrar Pagamento</button>
-                            <button type="button" class="btn-secondary" onclick="togglePaymentForm('${account.id}')">Cancelar</button>
+                            <button type="button" class="btn-pay" onclick="registerPayment('${account.id}', 'active')">Registrar Pagamento</button>
+                            <button type="button" class="btn-secondary" onclick="togglePaymentForm('${account.id}', 'active')">Cancelar</button>
                         </div>
                     </div>
                     ` : ''}
                 `;
                 
-                accountsContainer.appendChild(accountCard);
+                activeAccountsContainer.appendChild(accountCard);
             });
         }
         
+        // Função para renderizar as contas quitadas
+        function renderPaidAccounts(searchTerm = '') {
+            const { paidAccounts } = separateAccounts();
+            const filteredAccounts = filterAccounts(paidAccounts, searchTerm);
+            const sortedAccounts = sortPaidAccounts(filteredAccounts, currentPaidSort);
+            
+            if (paidAccounts.length === 0) {
+                loadingPaidState.style.display = 'none';
+                emptyPaidState.style.display = 'block';
+                noResultsPaid.style.display = 'none';
+                paidAccountsContainer.innerHTML = '';
+                return;
+            }
+            
+            loadingPaidState.style.display = 'none';
+            emptyPaidState.style.display = 'none';
+            
+            if (sortedAccounts.length === 0) {
+                noResultsPaid.style.display = 'block';
+                paidAccountsContainer.innerHTML = '';
+                return;
+            }
+            
+            noResultsPaid.style.display = 'none';
+            paidAccountsContainer.innerHTML = '';
+            
+            sortedAccounts.forEach((account, index) => {
+                const total = calculateTotal(account.products);
+                const paid = calculatePaid(account.payments);
+                const daysSinceCreation = getDaysSinceCreation(account.creationDate);
+                const paymentDate = account.lastPaymentDate || account.creationDate;
+                
+                const accountCard = document.createElement('div');
+                accountCard.className = 'account-card paid';
+                accountCard.innerHTML = `
+                    <div class="account-header">
+                        <div>
+                            <div class="account-name">${account.customerName}</div>
+                            <div class="account-phone">${account.phoneNumber}</div>
+                            <div class="account-date">Quitada em: ${formatDate(new Date(paymentDate))}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="product-list">
+                        ${account.products.map(product => `
+                            <div class="product-item">
+                                <span>${product.name}</span>
+                                <span>${formatCurrency(product.value)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="payment-info">
+                        <strong>Pagamentos Realizados:</strong>
+                        ${account.payments.map(payment => `
+                            <div class="payment-item">
+                                <span>${formatDate(new Date(payment.date))}</span>
+                                <span>${formatCurrency(payment.amount)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <div class="total paid">
+                        Total: ${formatCurrency(total)}<br>
+                        Pago: ${formatCurrency(paid)}<br>
+                        CONTA QUITADA
+                    </div>
+                    
+                    <div class="actions">
+                        <button class="btn-delete" onclick="deleteAccount('${account.id}', '${account.customerName}')">Apagar Conta</button>
+                    </div>
+                `;
+                
+                paidAccountsContainer.appendChild(accountCard);
+            });
+        }
+        
+        // Função para atualizar a exibição de todas as contas
+        function updateAccountsDisplay() {
+            const { activeAccounts, paidAccounts } = separateAccounts();
+            
+            // Atualizar contadores
+            activeCountBadge.textContent = activeAccounts.length;
+            paidCountBadge.textContent = paidAccounts.length;
+            
+            // Renderizar as contas
+            renderActiveAccounts(searchInputActive.value);
+            renderPaidAccounts(searchInputPaid.value);
+        }
+        
         // Função para alternar o formulário de adicionar produto
-        function toggleAddProductForm(accountId) {
-            const form = document.getElementById(`addProductForm-${accountId}`);
+        function toggleAddProductForm(accountId, tabType) {
+            const form = document.getElementById(`addProductForm-${tabType}-${accountId}`);
             if (form.style.display === 'block') {
                 form.style.display = 'none';
             } else {
                 form.style.display = 'block';
                 // Fechar outros formulários abertos
-                document.querySelectorAll('.add-product-form').forEach(f => {
-                    if (f.id !== `addProductForm-${accountId}`) f.style.display = 'none';
+                document.querySelectorAll(`.add-product-form`).forEach(f => {
+                    if (f.id !== `addProductForm-${tabType}-${accountId}`) f.style.display = 'none';
                 });
-                document.querySelectorAll('.payment-form').forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.payment-form`).forEach(f => f.style.display = 'none');
             }
         }
         
         // Função para alternar o formulário de pagamento
-        function togglePaymentForm(accountId) {
-            const form = document.getElementById(`paymentForm-${accountId}`);
+        function togglePaymentForm(accountId, tabType) {
+            const form = document.getElementById(`paymentForm-${tabType}-${accountId}`);
             if (form.style.display === 'block') {
                 form.style.display = 'none';
             } else {
                 form.style.display = 'block';
                 // Fechar outros formulários abertos
-                document.querySelectorAll('.payment-form').forEach(f => {
-                    if (f.id !== `paymentForm-${accountId}`) f.style.display = 'none';
+                document.querySelectorAll(`.payment-form`).forEach(f => {
+                    if (f.id !== `paymentForm-${tabType}-${accountId}`) f.style.display = 'none';
                 });
-                document.querySelectorAll('.add-product-form').forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.add-product-form`).forEach(f => f.style.display = 'none');
                 
                 // Atualizar o valor máximo do pagamento
                 const account = accounts.find(acc => acc.id === accountId);
@@ -714,16 +963,16 @@
                     const total = calculateTotal(account.products);
                     const paid = calculatePaid(account.payments);
                     const remaining = total - paid;
-                    document.getElementById(`paymentAmount-${accountId}`).max = remaining;
-                    document.getElementById(`paymentAmount-${accountId}`).value = remaining;
+                    document.getElementById(`paymentAmount-${tabType}-${accountId}`).max = remaining;
+                    document.getElementById(`paymentAmount-${tabType}-${accountId}`).value = remaining;
                 }
             }
         }
         
         // Função para adicionar produto a uma conta existente
-        async function addProductToAccount(accountId) {
-            const productName = document.getElementById(`newProductName-${accountId}`).value;
-            const productValue = parseFloat(document.getElementById(`newProductValue-${accountId}`).value);
+        async function addProductToAccount(accountId, tabType) {
+            const productName = document.getElementById(`newProductName-${tabType}-${accountId}`).value;
+            const productValue = parseFloat(document.getElementById(`newProductValue-${tabType}-${accountId}`).value);
             
             if (!productName || isNaN(productValue) || productValue <= 0) {
                 alert('Por favor, preencha todos os campos corretamente.');
@@ -745,15 +994,14 @@
                 });
                 
                 // Limpar os campos do formulário
-                document.getElementById(`newProductName-${accountId}`).value = '';
-                document.getElementById(`newProductValue-${accountId}`).value = '';
+                document.getElementById(`newProductName-${tabType}-${accountId}`).value = '';
+                document.getElementById(`newProductValue-${tabType}-${accountId}`).value = '';
                 
-                // Atualizar a exibição mantendo a pesquisa atual
-                const currentSearch = searchInput.value;
-                renderAccounts(currentSearch);
+                // Atualizar a exibição
+                updateAccountsDisplay();
                 
                 // Fechar o formulário
-                toggleAddProductForm(accountId);
+                toggleAddProductForm(accountId, tabType);
             } catch (error) {
                 console.error('Erro ao adicionar produto:', error);
                 alert('Erro ao adicionar produto. Tente novamente.');
@@ -761,8 +1009,8 @@
         }
         
         // Função para registrar um pagamento
-        async function registerPayment(accountId) {
-            const paymentAmount = parseFloat(document.getElementById(`paymentAmount-${accountId}`).value);
+        async function registerPayment(accountId, tabType) {
+            const paymentAmount = parseFloat(document.getElementById(`paymentAmount-${tabType}-${accountId}`).value);
             const accountIndex = accounts.findIndex(acc => acc.id === accountId);
             if (accountIndex === -1) return;
             
@@ -791,20 +1039,19 @@
                     lastPaymentDate: account.lastPaymentDate
                 });
                 
-                // Se a conta foi totalmente paga, perguntar se deseja reabrir
+                // Verificar se a conta foi totalmente paga
                 const newPaid = calculatePaid(account.payments);
                 if (newPaid >= total) {
                     setTimeout(() => {
-                        alert('Conta quitada com sucesso! Ela agora aparecerá na aba "Quitadas".');
+                        alert('Conta quitada com sucesso! Ela agora aparecerá na aba "Contas Quitadas".');
                     }, 500);
                 }
                 
-                // Atualizar a exibição mantendo a pesquisa atual
-                const currentSearch = searchInput.value;
-                renderAccounts(currentSearch);
+                // Atualizar a exibição
+                updateAccountsDisplay();
                 
                 // Fechar o formulário
-                togglePaymentForm(accountId);
+                togglePaymentForm(accountId, tabType);
                 
                 alert(`Pagamento de ${formatCurrency(paymentAmount)} registrado com sucesso!`);
             } catch (error) {
@@ -849,9 +1096,11 @@
                 // Limpar o formulário
                 accountForm.reset();
                 
-                // Atualizar a exibição mantendo a pesquisa atual
-                const currentSearch = searchInput.value;
-                renderAccounts(currentSearch);
+                // Atualizar a exibição
+                updateAccountsDisplay();
+                
+                // Mudar para a aba de contas ativas
+                switchTab('active-accounts');
                 
                 alert('Conta adicionada com sucesso!');
             } catch (error) {
@@ -860,37 +1109,92 @@
             }
         });
         
-        // Event listener para a barra de pesquisa
-        searchInput.addEventListener('input', function() {
-            renderAccounts(this.value);
+        // Event listeners para as abas
+        tabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                const tabId = tab.getAttribute('data-tab');
+                switchTab(tabId);
+            });
         });
         
-        // Event listeners para os botões de ordenação
+        // Função para alternar entre abas
+        function switchTab(tabId) {
+            // Remover classe active de todas as abas e conteúdos
+            tabs.forEach(tab => tab.classList.remove('active'));
+            tabContents.forEach(content => content.classList.remove('active'));
+            
+            // Adicionar classe active à aba e conteúdo selecionados
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            document.getElementById(`${tabId}-content`).classList.add('active');
+        }
+        
+        // Event listeners para a barra de pesquisa
+        searchInputActive.addEventListener('input', function() {
+            renderActiveAccounts(this.value);
+        });
+        
+        searchInputPaid.addEventListener('input', function() {
+            renderPaidAccounts(this.value);
+        });
+        
+        // Event listeners para os botões de ordenação das contas ativas
         sortOldest.addEventListener('click', function() {
-            currentSort = 'oldest';
-            updateSortButtons();
-            renderAccounts(searchInput.value);
+            currentActiveSort = 'oldest';
+            updateActiveSortButtons();
+            renderActiveAccounts(searchInputActive.value);
         });
         
         sortNewest.addEventListener('click', function() {
-            currentSort = 'newest';
-            updateSortButtons();
-            renderAccounts(searchInput.value);
+            currentActiveSort = 'newest';
+            updateActiveSortButtons();
+            renderActiveAccounts(searchInputActive.value);
         });
         
-        sortPaid.addEventListener('click', function() {
-            currentSort = 'paid';
-            updateSortButtons();
-            renderAccounts(searchInput.value);
+        sortOverdue.addEventListener('click', function() {
+            currentActiveSort = 'overdue';
+            updateActiveSortButtons();
+            renderActiveAccounts(searchInputActive.value);
         });
         
-        // Função para atualizar o estado dos botões de ordenação
-        function updateSortButtons() {
-            [sortOldest, sortNewest, sortPaid].forEach(btn => {
+        // Event listeners para os botões de ordenação das contas quitadas
+        sortPaidNewest.addEventListener('click', function() {
+            currentPaidSort = 'newest';
+            updatePaidSortButtons();
+            renderPaidAccounts(searchInputPaid.value);
+        });
+        
+        sortPaidOldest.addEventListener('click', function() {
+            currentPaidSort = 'oldest';
+            updatePaidSortButtons();
+            renderPaidAccounts(searchInputPaid.value);
+        });
+        
+        // Função para atualizar o estado dos botões de ordenação das contas ativas
+        function updateActiveSortButtons() {
+            [sortOldest, sortNewest, sortOverdue].forEach(btn => {
                 btn.classList.remove('active');
             });
             
-            document.getElementById(`sort${currentSort.charAt(0).toUpperCase() + currentSort.slice(1)}`).classList.add('active');
+            if (currentActiveSort === 'oldest') {
+                sortOldest.classList.add('active');
+            } else if (currentActiveSort === 'newest') {
+                sortNewest.classList.add('active');
+            } else if (currentActiveSort === 'overdue') {
+                sortOverdue.classList.add('active');
+            }
+        }
+        
+        // Função para atualizar o estado dos botões de ordenação das contas quitadas
+        function updatePaidSortButtons() {
+            [sortPaidNewest, sortPaidOldest].forEach(btn => {
+                btn.classList.remove('active');
+            });
+            
+            if (currentPaidSort === 'newest') {
+                sortPaidNewest.classList.add('active');
+            } else if (currentPaidSort === 'oldest') {
+                sortPaidOldest.classList.add('active');
+            }
         }
         
         // Carregar contas do Firebase
@@ -904,10 +1208,11 @@
                     accounts.push(account);
                 });
                 
-                renderAccounts();
+                updateAccountsDisplay();
             } catch (error) {
                 console.error('Erro ao carregar contas:', error);
-                loadingState.textContent = 'Erro ao carregar contas. Tente recarregar a página.';
+                loadingActiveState.textContent = 'Erro ao carregar contas. Tente recarregar a página.';
+                loadingPaidState.textContent = 'Erro ao carregar contas. Tente recarregar a página.';
             }
         }
         
