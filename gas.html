@@ -1,0 +1,806 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gama Novaes - Cadastro de Clientes</title>
+    
+    <!-- Adicione o SDK do Firebase -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
+
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA4jtlU8wG-HJKtH2DOtZdlTTUGd4Fix3U",
+            authDomain: "contasloja-3acbe.firebaseapp.com",
+            projectId: "contasloja-3acbe",
+            storageBucket: "contasloja-3acbe.firebasestorage.app",
+            messagingSenderId: "952643703609",
+            appId: "1:952643703609:web:b830ff3bee2980ada14ee8",
+            measurementId: "G-T1MFDSL824"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Torna as variáveis globais para serem acessadas pelo resto do código
+        window.firebaseApp = app;
+        window.firestoreDb = db;
+        window.firebaseModules = {
+            collection, addDoc, getDocs, deleteDoc, doc, query, where
+        };
+    </script>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        /* Header */
+        header {
+            background-color: #1e3a8a;
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .logo {
+            text-align: center;
+        }
+        
+        .logo h1 {
+            font-size: 2.2rem;
+            margin-bottom: 5px;
+        }
+        
+        .logo p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 40px 0;
+        }
+        
+        .page-title {
+            text-align: center;
+            margin-bottom: 30px;
+            color: #1e3a8a;
+        }
+        
+        .page-title h2 {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .page-title p {
+            font-size: 1.1rem;
+            color: #666;
+        }
+        
+        /* Form Styles */
+        .form-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+        
+        input, textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            transition: border-color 0.3s;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #1e3a8a;
+            box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2);
+        }
+        
+        .btn-submit {
+            background-color: #1e3a8a;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            width: 100%;
+            font-weight: bold;
+        }
+        
+        .btn-submit:hover {
+            background-color: #152c6b;
+        }
+        
+        /* Search Bar */
+        .search-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            margin-bottom: 30px;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        
+        .search-bar {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .search-input {
+            flex: 1;
+        }
+        
+        .btn-search {
+            background-color: #1e3a8a;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn-search:hover {
+            background-color: #152c6b;
+        }
+        
+        /* Clients List */
+        .clients-container {
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            padding: 30px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .clients-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        .clients-list {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .client-item {
+            padding: 15px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+        }
+        
+        .client-item:last-child {
+            border-bottom: none;
+        }
+        
+        .client-info {
+            flex: 1;
+        }
+        
+        .client-info h3 {
+            color: #1e3a8a;
+            margin-bottom: 5px;
+        }
+        
+        .client-info p {
+            color: #666;
+            margin-bottom: 3px;
+        }
+        
+        .client-address {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 5px;
+            border-left: 3px solid #1e3a8a;
+        }
+        
+        .client-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-left: 15px;
+        }
+        
+        .btn-copy {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .btn-copy:hover {
+            background-color: #218838;
+        }
+        
+        .btn-copy.copied {
+            background-color: #17a2b8;
+        }
+        
+        .btn-delete {
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            font-size: 0.9rem;
+        }
+        
+        .btn-delete:hover {
+            background-color: #c0392b;
+        }
+        
+        .no-clients {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+        }
+        
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #1e3a8a;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Toast Notification */
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: #28a745;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            transform: translateX(150%);
+            transition: transform 0.3s ease-in-out;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        /* Footer */
+        footer {
+            background-color: #1e3a8a;
+            color: white;
+            text-align: center;
+            padding: 20px 0;
+            margin-top: auto;
+        }
+        
+        .footer-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .contact-info {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        /* Success Message */
+        .success-message {
+            display: none;
+            background-color: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .error-message {
+            display: none;
+            background-color: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .form-container, .search-container, .clients-container {
+                padding: 20px;
+            }
+            
+            .page-title h2 {
+                font-size: 1.6rem;
+            }
+            
+            .search-bar {
+                flex-direction: column;
+            }
+            
+            .client-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .client-actions {
+                margin-top: 10px;
+                align-self: stretch;
+                flex-direction: row;
+                justify-content: flex-end;
+            }
+            
+            .client-actions button {
+                flex: 1;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">Endereço copiado para a área de transferência!</div>
+    
+    <header>
+        <div class="container">
+            <div class="logo">
+                <h1>Gama Novaes</h1>
+                <p>Revendedora de Gás</p>
+            </div>
+        </div>
+    </header>
+    
+    <main class="main-content">
+        <div class="container">
+            <div class="page-title">
+                <h2>Cadastro de Cliente</h2>
+                <p>Preencha os dados abaixo para cadastrar um novo cliente</p>
+            </div>
+            
+            <div class="form-container">
+                <form id="clientForm">
+                    <div class="form-group">
+                        <label for="clientName">Nome do Cliente</label>
+                        <input type="text" id="clientName" name="clientName" required placeholder="Digite o nome completo">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="clientPhone">Telefone</label>
+                        <input type="tel" id="clientPhone" name="clientPhone" required placeholder="(00) 00000-0000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="clientAddress">Endereço Completo</label>
+                        <textarea id="clientAddress" name="clientAddress" rows="4" required placeholder="Digite o endereço completo (rua, número, bairro, condomíno, bloco, e apartamento)"></textarea>
+                    </div>
+                    
+                    <button type="submit" class="btn-submit">Cadastrar Cliente</button>
+                </form>
+                
+                <div id="successMessage" class="success-message">
+                    Cliente cadastrado com sucesso!
+                </div>
+                
+                <div id="errorMessage" class="error-message">
+                    Erro ao cadastrar cliente. Tente novamente.
+                </div>
+                
+                <div id="loading" class="loading">
+                    <div class="spinner"></div>
+                    <p>Processando...</p>
+                </div>
+            </div>
+            
+            <div class="search-container">
+                <div class="search-bar">
+                    <div class="search-input">
+                        <input type="text" id="searchInput" placeholder="Pesquisar cliente por nome ou telefone">
+                    </div>
+                    <button type="button" class="btn-search" id="searchButton">Pesquisar</button>
+                </div>
+            </div>
+            
+            <div class="clients-container">
+                <div class="clients-header">
+                    <h2>Clientes Cadastrados</h2>
+                    <span id="clientsCount">0 clientes</span>
+                </div>
+                
+                <div class="loading" id="loadingClients">
+                    <div class="spinner"></div>
+                    <p>Carregando clientes...</p>
+                </div>
+                
+                <div class="clients-list" id="clientsList">
+                    <div class="no-clients" id="noClientsMessage">
+                        Nenhum cliente cadastrado ainda. Use o formulário acima para adicionar clientes.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    
+    
+    <script>
+        // Elementos do DOM
+        const clientForm = document.getElementById('clientForm');
+        const clientsList = document.getElementById('clientsList');
+        const clientsCount = document.getElementById('clientsCount');
+        const noClientsMessage = document.getElementById('noClientsMessage');
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+        const loading = document.getElementById('loading');
+        const loadingClients = document.getElementById('loadingClients');
+        const toast = document.getElementById('toast');
+        
+        // Função para mostrar toast notification
+        function showToast(message) {
+            toast.textContent = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Função para copiar endereço para a área de transferência
+        async function copyAddress(address) {
+            try {
+                await navigator.clipboard.writeText(address);
+                showToast('Endereço copiado para a área de transferência!');
+                return true;
+            } catch (err) {
+                // Fallback para navegadores mais antigos
+                const textArea = document.createElement('textarea');
+                textArea.value = address;
+                document.body.appendChild(textArea);
+                textArea.select();
+                try {
+                    document.execCommand('copy');
+                    showToast('Endereço copiado para a área de transferência!');
+                    return true;
+                } catch (fallbackErr) {
+                    showToast('Erro ao copiar endereço. Tente novamente.');
+                    return false;
+                } finally {
+                    document.body.removeChild(textArea);
+                }
+            }
+        }
+        
+        // Função para mostrar/ocultar loading
+        function showLoading(show) {
+            loading.style.display = show ? 'block' : 'none';
+        }
+        
+        function showLoadingClients(show) {
+            loadingClients.style.display = show ? 'block' : 'none';
+            clientsList.style.display = show ? 'none' : 'block';
+        }
+        
+        // Função para mostrar mensagem de sucesso
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 3000);
+        }
+        
+        // Função para mostrar mensagem de erro
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            setTimeout(() => {
+                errorMessage.style.display = 'none';
+            }, 5000);
+        }
+        
+        // Função para carregar clientes do Firebase
+        async function loadClients() {
+            try {
+                showLoadingClients(true);
+                
+                const { getDocs, collection } = window.firebaseModules;
+                const db = window.firestoreDb;
+                
+                const querySnapshot = await getDocs(collection(db, "clientes"));
+                const clients = [];
+                
+                querySnapshot.forEach((doc) => {
+                    clients.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Ordenar clientes por nome
+                clients.sort((a, b) => a.name.localeCompare(b.name));
+                
+                updateClientsList(clients);
+            } catch (error) {
+                console.error("Erro ao carregar clientes:", error);
+                showError("Erro ao carregar lista de clientes");
+            } finally {
+                showLoadingClients(false);
+            }
+        }
+        
+        // Função para atualizar a lista de clientes
+        function updateClientsList(clients = []) {
+            clientsCount.textContent = `${clients.length} ${clients.length === 1 ? 'cliente' : 'clientes'}`;
+            
+            if (clients.length === 0) {
+                noClientsMessage.style.display = 'block';
+                clientsList.innerHTML = '';
+                clientsList.appendChild(noClientsMessage);
+                return;
+            }
+            
+            noClientsMessage.style.display = 'none';
+            
+            clientsList.innerHTML = '';
+            
+            clients.forEach((client) => {
+                const clientItem = document.createElement('div');
+                clientItem.className = 'client-item';
+                
+                clientItem.innerHTML = `
+                    <div class="client-info">
+                        <h3>${client.name}</h3>
+                        <p><strong>Telefone:</strong> ${client.phone}</p>
+                        <div class="client-address">
+                            <strong>Endereço:</strong> ${client.address}
+                        </div>
+                    </div>
+                    <div class="client-actions">
+                        <button class="btn-copy" onclick="copyClientAddress('${client.id}', '${client.address.replace(/'/g, "\\'")}')">
+                            📋 Copiar Endereço
+                        </button>
+                        <button class="btn-delete" onclick="deleteClient('${client.id}')">
+                            🗑️ Excluir
+                        </button>
+                    </div>
+                `;
+                
+                clientsList.appendChild(clientItem);
+            });
+        }
+        
+        // Função para copiar endereço de um cliente específico
+        async function copyClientAddress(clientId, address) {
+            const success = await copyAddress(address);
+            
+            if (success) {
+                // Feedback visual no botão
+                const button = document.querySelector(`.btn-copy[onclick*="${clientId}"]`);
+                if (button) {
+                    const originalText = button.innerHTML;
+                    button.innerHTML = '✅ Copiado!';
+                    button.classList.add('copied');
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalText;
+                        button.classList.remove('copied');
+                    }, 2000);
+                }
+            }
+        }
+        
+        // Função para adicionar um novo cliente
+        async function addClient(name, phone, address) {
+            try {
+                showLoading(true);
+                
+                const { addDoc, collection } = window.firebaseModules;
+                const db = window.firestoreDb;
+                
+                await addDoc(collection(db, "clientes"), {
+                    name: name,
+                    phone: phone,
+                    address: address,
+                    createdAt: new Date()
+                });
+                
+                showSuccess("Cliente cadastrado com sucesso!");
+                await loadClients(); // Recarrega a lista
+            } catch (error) {
+                console.error("Erro ao adicionar cliente:", error);
+                showError("Erro ao cadastrar cliente. Tente novamente.");
+            } finally {
+                showLoading(false);
+            }
+        }
+        
+        // Função para excluir um cliente
+        async function deleteClient(clientId) {
+            if (confirm('Tem certeza que deseja excluir este cliente?')) {
+                try {
+                    const { deleteDoc, doc } = window.firebaseModules;
+                    const db = window.firestoreDb;
+                    
+                    await deleteDoc(doc(db, "clientes", clientId));
+                    showSuccess("Cliente excluído com sucesso!");
+                    await loadClients(); // Recarrega a lista
+                } catch (error) {
+                    console.error("Erro ao excluir cliente:", error);
+                    showError("Erro ao excluir cliente. Tente novamente.");
+                }
+            }
+        }
+        
+        // Função para pesquisar clientes
+        async function searchClients() {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            
+            if (searchTerm === '') {
+                await loadClients();
+                return;
+            }
+            
+            try {
+                showLoadingClients(true);
+                
+                const { getDocs, collection, query, where } = window.firebaseModules;
+                const db = window.firestoreDb;
+                
+                // Busca por nome (case insensitive)
+                const nameQuery = query(
+                    collection(db, "clientes"),
+                    where("name", ">=", searchTerm),
+                    where("name", "<=", searchTerm + "\uf8ff")
+                );
+                
+                const querySnapshot = await getDocs(nameQuery);
+                const clients = [];
+                
+                querySnapshot.forEach((doc) => {
+                    clients.push({
+                        id: doc.id,
+                        ...doc.data()
+                    });
+                });
+                
+                // Filtra também por telefone localmente
+                const filteredClients = clients.filter(client => 
+                    client.name.toLowerCase().includes(searchTerm) || 
+                    client.phone.includes(searchTerm)
+                );
+                
+                updateClientsList(filteredClients);
+            } catch (error) {
+                console.error("Erro ao pesquisar clientes:", error);
+                showError("Erro ao pesquisar clientes");
+            } finally {
+                showLoadingClients(false);
+            }
+        }
+        
+        // Event Listeners
+        clientForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('clientName').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const address = document.getElementById('clientAddress').value.trim();
+            
+            if (!name || !phone || !address) {
+                showError("Por favor, preencha todos os campos.");
+                return;
+            }
+            
+            await addClient(name, phone, address);
+            clientForm.reset();
+        });
+        
+        searchButton.addEventListener('click', searchClients);
+        
+        searchInput.addEventListener('keyup', function(e) {
+            if (e.key === 'Enter') {
+                searchClients();
+            }
+        });
+        
+        // Formatação automática do telefone
+        document.getElementById('clientPhone').addEventListener('input', function(e) {
+            let value = e.target.value.replace(/\D/g, '');
+            
+            if (value.length <= 11) {
+                value = value.replace(/(\d{2})(\d)/, '($1) $2');
+                value = value.replace(/(\d{5})(\d)/, '$1-$2');
+            }
+            
+            e.target.value = value;
+        });
+        
+        // Inicializar a lista de clientes quando a página carregar
+        document.addEventListener('DOMContentLoaded', function() {
+            // Aguarda o Firebase carregar
+            setTimeout(() => {
+                loadClients();
+            }, 1000);
+        });
+        
+        // Tornar as funções globais para serem acessíveis pelo onclick
+        window.deleteClient = deleteClient;
+        window.copyClientAddress = copyClientAddress;
+    </script>
+</body>
+</html>
