@@ -90,6 +90,15 @@
             font-size: 1rem;
         }
         
+        .form-row {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
         button {
             background-color: var(--primary-red);
             color: var(--white);
@@ -232,6 +241,37 @@
             justify-content: space-between;
             padding: 0.5rem 0;
             border-bottom: 1px dotted #eee;
+        }
+        
+        .product-details {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        
+        .product-name {
+            font-weight: 600;
+        }
+        
+        .product-quantity {
+            font-size: 0.85rem;
+            color: var(--dark-gray);
+        }
+        
+        .product-value {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 0.25rem;
+        }
+        
+        .unit-price {
+            font-size: 0.85rem;
+            color: var(--dark-gray);
+        }
+        
+        .total-price {
+            font-weight: 600;
         }
         
         .payment-info {
@@ -468,6 +508,11 @@
                 display: block;
                 width: fit-content;
             }
+            
+            .form-row {
+                flex-direction: column;
+                gap: 0;
+            }
         }
     </style>
 </head>
@@ -499,9 +544,16 @@
                     <input type="text" id="productName" required>
                 </div>
                 
-                <div class="form-group">
-                    <label for="productValue">Valor do Produto (R$)</label>
-                    <input type="number" id="productValue" step="0.01" min="0" required>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="productQuantity">Quantidade</label>
+                        <input type="number" id="productQuantity" min="1" value="1" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="productValue">Valor Unitário (R$)</label>
+                        <input type="number" id="productValue" step="0.01" min="0" required>
+                    </div>
                 </div>
                 
                 <button type="submit">Adicionar Conta</button>
@@ -635,7 +687,7 @@
         
         // Função para calcular o total de uma conta
         function calculateTotal(products) {
-            return products.reduce((total, product) => total + product.value, 0);
+            return products.reduce((total, product) => total + (product.value * product.quantity), 0);
         }
         
         // Função para calcular o total pago
@@ -812,8 +864,14 @@
                     <div class="product-list">
                         ${account.products.map(product => `
                             <div class="product-item">
-                                <span>${product.name}</span>
-                                <span>${formatCurrency(product.value)}</span>
+                                <div class="product-details">
+                                    <div class="product-name">${product.name}</div>
+                                    <div class="product-quantity">Quantidade: ${product.quantity}</div>
+                                </div>
+                                <div class="product-value">
+                                    <div class="unit-price">${formatCurrency(product.value)} un.</div>
+                                    <div class="total-price">${formatCurrency(product.value * product.quantity)}</div>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -850,9 +908,15 @@
                             <label for="newProductName-active-${account.id}">Nome do Material</label>
                             <input type="text" id="newProductName-active-${account.id}" required>
                         </div>
-                        <div class="form-group">
-                            <label for="newProductValue-active-${account.id}">Valor (R$)</label>
-                            <input type="number" id="newProductValue-active-${account.id}" step="0.01" min="0" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="newProductQuantity-active-${account.id}">Quantidade</label>
+                                <input type="number" id="newProductQuantity-active-${account.id}" min="1" value="1" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="newProductValue-active-${account.id}">Valor Unitário (R$)</label>
+                                <input type="number" id="newProductValue-active-${account.id}" step="0.01" min="0" required>
+                            </div>
                         </div>
                         <div class="actions">
                             <button type="button" onclick="addProductToAccount('${account.id}', 'active')">Adicionar</button>
@@ -925,8 +989,14 @@
                     <div class="product-list">
                         ${account.products.map(product => `
                             <div class="product-item">
-                                <span>${product.name}</span>
-                                <span>${formatCurrency(product.value)}</span>
+                                <div class="product-details">
+                                    <div class="product-name">${product.name}</div>
+                                    <div class="product-quantity">Quantidade: ${product.quantity}</div>
+                                </div>
+                                <div class="product-value">
+                                    <div class="unit-price">${formatCurrency(product.value)} un.</div>
+                                    <div class="total-price">${formatCurrency(product.value * product.quantity)}</div>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
@@ -1012,9 +1082,10 @@
         // Função para adicionar produto a uma conta existente
         async function addProductToAccount(accountId, tabType) {
             const productName = document.getElementById(`newProductName-${tabType}-${accountId}`).value;
+            const productQuantity = parseInt(document.getElementById(`newProductQuantity-${tabType}-${accountId}`).value);
             const productValue = parseFloat(document.getElementById(`newProductValue-${tabType}-${accountId}`).value);
             
-            if (!productName || isNaN(productValue) || productValue <= 0) {
+            if (!productName || isNaN(productQuantity) || productQuantity <= 0 || isNaN(productValue) || productValue <= 0) {
                 alert('Por favor, preencha todos os campos corretamente.');
                 return;
             }
@@ -1024,6 +1095,7 @@
             
             accounts[accountIndex].products.push({
                 name: productName,
+                quantity: productQuantity,
                 value: productValue
             });
             
@@ -1035,6 +1107,7 @@
                 
                 // Limpar os campos do formulário
                 document.getElementById(`newProductName-${tabType}-${accountId}`).value = '';
+                document.getElementById(`newProductQuantity-${tabType}-${accountId}`).value = '1';
                 document.getElementById(`newProductValue-${tabType}-${accountId}`).value = '';
                 
                 // Atualizar a exibição
@@ -1107,10 +1180,11 @@
             const customerName = document.getElementById('customerName').value;
             const phoneNumber = document.getElementById('phoneNumber').value;
             const productName = document.getElementById('productName').value;
+            const productQuantity = parseInt(document.getElementById('productQuantity').value);
             const productValue = parseFloat(document.getElementById('productValue').value);
             
             // Validar os dados
-            if (!customerName || !phoneNumber || !productName || isNaN(productValue) || productValue <= 0) {
+            if (!customerName || !phoneNumber || !productName || isNaN(productQuantity) || productQuantity <= 0 || isNaN(productValue) || productValue <= 0) {
                 alert('Por favor, preencha todos os campos corretamente.');
                 return;
             }
@@ -1121,6 +1195,7 @@
                 phoneNumber,
                 products: [{
                     name: productName,
+                    quantity: productQuantity,
                     value: productValue
                 }],
                 payments: [],
@@ -1135,6 +1210,7 @@
                 
                 // Limpar o formulário
                 accountForm.reset();
+                document.getElementById('productQuantity').value = '1';
                 
                 // Atualizar a exibição
                 updateAccountsDisplay();
@@ -1245,6 +1321,14 @@
                 snapshot.forEach(doc => {
                     const account = doc.data();
                     account.id = doc.id;
+                    // Garantir que produtos antigos tenham quantidade 1
+                    if (account.products && account.products.length > 0) {
+                        account.products.forEach(product => {
+                            if (!product.quantity) {
+                                product.quantity = 1;
+                            }
+                        });
+                    }
                     accounts.push(account);
                 });
                 
