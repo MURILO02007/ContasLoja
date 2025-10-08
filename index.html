@@ -82,12 +82,17 @@
             font-weight: 600;
         }
         
-        input, select {
+        input, select, textarea {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid #ddd;
             border-radius: 4px;
             font-size: 1rem;
+        }
+        
+        textarea {
+            min-height: 80px;
+            resize: vertical;
         }
         
         .form-row {
@@ -160,6 +165,11 @@
         .btn-delete:hover {
             background-color: #d32f2f;
             transform: translateY(-2px);
+        }
+        
+        .btn-small {
+            padding: 0.4rem 0.8rem;
+            font-size: 0.85rem;
         }
         
         .accounts-grid {
@@ -247,6 +257,7 @@
             display: flex;
             flex-direction: column;
             gap: 0.25rem;
+            flex: 1;
         }
         
         .product-name {
@@ -272,6 +283,12 @@
         
         .total-price {
             font-weight: 600;
+        }
+        
+        .product-actions {
+            display: flex;
+            gap: 0.25rem;
+            margin-top: 0.25rem;
         }
         
         .payment-info {
@@ -300,7 +317,7 @@
             color: var(--green);
         }
         
-        .add-product-form, .payment-form {
+        .add-product-form, .payment-form, .observation-form, .add-quantity-form {
             display: none;
             margin-top: 1rem;
             padding: 1rem;
@@ -395,7 +412,7 @@
         }
         
         .tab {
-        color: var(--dark-gray);
+            color: var(--dark-gray);
             flex: 1;
             padding: 1rem;
             text-align: center;
@@ -467,6 +484,25 @@
             background-color: var(--light-red);
             transform: translateY(-2px);
             box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+        
+        .observation {
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: var(--light-blue);
+            border-radius: 4px;
+            border-left: 3px solid var(--blue);
+        }
+        
+        .observation p {
+            margin: 0;
+            font-size: 0.9rem;
+        }
+        
+        .observation-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--dark-gray);
         }
         
         @media (max-width: 768px) {
@@ -554,6 +590,11 @@
                         <label for="productValue">Valor Unitário (R$)</label>
                         <input type="number" id="productValue" step="0.01" min="0" required>
                     </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="observation">Observação (opcional)</label>
+                    <textarea id="observation" placeholder="Adicione uma observação sobre esta conta..."></textarea>
                 </div>
                 
                 <button type="submit">Adicionar Conta</button>
@@ -811,6 +852,98 @@
             }
         }
         
+        // Função para apagar um produto específico
+        async function deleteProduct(accountId, productIndex, tabType) {
+            const account = accounts.find(acc => acc.id === accountId);
+            if (!account) return;
+            
+            const product = account.products[productIndex];
+            
+            if (confirm(`Tem certeza que deseja remover o produto "${product.name}" desta conta?`)) {
+                try {
+                    // Remover o produto do array
+                    account.products.splice(productIndex, 1);
+                    
+                    // Atualizar no Firebase
+                    await db.collection('accounts').doc(accountId).update({
+                        products: account.products
+                    });
+                    
+                    // Atualizar a exibição
+                    updateAccountsDisplay();
+                    
+                    alert('Produto removido com sucesso!');
+                } catch (error) {
+                    console.error('Erro ao remover produto:', error);
+                    alert('Erro ao remover produto. Tente novamente.');
+                }
+            }
+        }
+        
+        // Função para adicionar quantidade a um produto existente
+        async function addQuantityToProduct(accountId, productIndex, tabType) {
+            const account = accounts.find(acc => acc.id === accountId);
+            if (!account) return;
+            
+            const product = account.products[productIndex];
+            const additionalQuantity = parseInt(document.getElementById(`additionalQuantity-${tabType}-${accountId}-${productIndex}`).value);
+            
+            if (isNaN(additionalQuantity) || additionalQuantity <= 0) {
+                alert('Por favor, insira uma quantidade válida.');
+                return;
+            }
+            
+            try {
+                // Atualizar a quantidade do produto
+                product.quantity += additionalQuantity;
+                
+                // Atualizar no Firebase
+                await db.collection('accounts').doc(accountId).update({
+                    products: account.products
+                });
+                
+                // Atualizar a exibição
+                updateAccountsDisplay();
+                
+                // Fechar o formulário
+                toggleAddQuantityForm(accountId, productIndex, tabType);
+                
+                alert(`${additionalQuantity} unidades adicionadas ao produto "${product.name}"!`);
+            } catch (error) {
+                console.error('Erro ao adicionar quantidade:', error);
+                alert('Erro ao adicionar quantidade. Tente novamente.');
+            }
+        }
+        
+        // Função para atualizar a observação da conta
+        async function updateObservation(accountId, tabType) {
+            const account = accounts.find(acc => acc.id === accountId);
+            if (!account) return;
+            
+            const observation = document.getElementById(`observationInput-${tabType}-${accountId}`).value;
+            
+            try {
+                // Atualizar a observação
+                account.observation = observation;
+                
+                // Atualizar no Firebase
+                await db.collection('accounts').doc(accountId).update({
+                    observation: observation
+                });
+                
+                // Atualizar a exibição
+                updateAccountsDisplay();
+                
+                // Fechar o formulário
+                toggleObservationForm(accountId, tabType);
+                
+                alert('Observação atualizada com sucesso!');
+            } catch (error) {
+                console.error('Erro ao atualizar observação:', error);
+                alert('Erro ao atualizar observação. Tente novamente.');
+            }
+        }
+        
         // Função para renderizar as contas ativas
         function renderActiveAccounts(searchTerm = '') {
             const { activeAccounts } = separateAccounts();
@@ -860,17 +993,39 @@
                         </div>
                     </div>
                     
+                    ${account.observation ? `
+                    <div class="observation">
+                        <div class="observation-title">Observação:</div>
+                        <p>${account.observation}</p>
+                    </div>
+                    ` : ''}
+                    
                     ${hasProducts ? `
                     <div class="product-list">
-                        ${account.products.map(product => `
+                        ${account.products.map((product, productIndex) => `
                             <div class="product-item">
                                 <div class="product-details">
                                     <div class="product-name">${product.name}</div>
                                     <div class="product-quantity">Quantidade: ${product.quantity}</div>
+                                    <div class="product-actions">
+                                        <button class="btn-secondary btn-small" onclick="toggleAddQuantityForm('${account.id}', ${productIndex}, 'active')">+ Quantidade</button>
+                                        <button class="btn-delete btn-small" onclick="deleteProduct('${account.id}', ${productIndex}, 'active')">Remover</button>
+                                    </div>
                                 </div>
                                 <div class="product-value">
                                     <div class="unit-price">${formatCurrency(product.value)} un.</div>
                                     <div class="total-price">${formatCurrency(product.value * product.quantity)}</div>
+                                </div>
+                            </div>
+                            
+                            <div class="add-quantity-form" id="addQuantityForm-active-${account.id}-${productIndex}">
+                                <div class="form-group">
+                                    <label for="additionalQuantity-active-${account.id}-${productIndex}">Quantidade adicional para "${product.name}"</label>
+                                    <input type="number" id="additionalQuantity-active-${account.id}-${productIndex}" min="1" value="1" required>
+                                </div>
+                                <div class="actions">
+                                    <button type="button" onclick="addQuantityToProduct('${account.id}', ${productIndex}, 'active')">Adicionar</button>
+                                    <button type="button" class="btn-secondary" onclick="toggleAddQuantityForm('${account.id}', ${productIndex}, 'active')">Cancelar</button>
                                 </div>
                             </div>
                         `).join('')}
@@ -900,6 +1055,7 @@
                     <div class="actions">
                         ${hasProducts ? `<button class="btn-pay" onclick="togglePaymentForm('${account.id}', 'active')">Registrar Pagamento</button>` : ''}
                         <button class="btn-secondary" onclick="toggleAddProductForm('${account.id}', 'active')">+ Produto</button>
+                        <button class="btn-secondary" onclick="toggleObservationForm('${account.id}', 'active')">${account.observation ? 'Editar Observação' : 'Adicionar Observação'}</button>
                         <button class="btn-delete" onclick="deleteAccount('${account.id}', '${account.customerName}')">Apagar Conta</button>
                     </div>
                     
@@ -937,6 +1093,17 @@
                         </div>
                     </div>
                     ` : ''}
+                    
+                    <div class="observation-form" id="observationForm-active-${account.id}">
+                        <div class="form-group">
+                            <label for="observationInput-active-${account.id}">Observação</label>
+                            <textarea id="observationInput-active-${account.id}" placeholder="Adicione uma observação sobre esta conta...">${account.observation || ''}</textarea>
+                        </div>
+                        <div class="actions">
+                            <button type="button" onclick="updateObservation('${account.id}', 'active')">Salvar Observação</button>
+                            <button type="button" class="btn-secondary" onclick="toggleObservationForm('${account.id}', 'active')">Cancelar</button>
+                        </div>
+                    </div>
                 `;
                 
                 activeAccountsContainer.appendChild(accountCard);
@@ -985,6 +1152,13 @@
                             <div class="account-date">Quitada em: ${formatDate(new Date(paymentDate))}</div>
                         </div>
                     </div>
+                    
+                    ${account.observation ? `
+                    <div class="observation">
+                        <div class="observation-title">Observação:</div>
+                        <p>${account.observation}</p>
+                    </div>
+                    ` : ''}
                     
                     <div class="product-list">
                         ${account.products.map(product => `
@@ -1051,6 +1225,8 @@
                     if (f.id !== `addProductForm-${tabType}-${accountId}`) f.style.display = 'none';
                 });
                 document.querySelectorAll(`.payment-form`).forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.observation-form`).forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.add-quantity-form`).forEach(f => f.style.display = 'none');
             }
         }
         
@@ -1066,6 +1242,8 @@
                     if (f.id !== `paymentForm-${tabType}-${accountId}`) f.style.display = 'none';
                 });
                 document.querySelectorAll(`.add-product-form`).forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.observation-form`).forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.add-quantity-form`).forEach(f => f.style.display = 'none');
                 
                 // Atualizar o valor máximo do pagamento
                 const account = accounts.find(acc => acc.id === accountId);
@@ -1076,6 +1254,40 @@
                     document.getElementById(`paymentAmount-${tabType}-${accountId}`).max = remaining;
                     document.getElementById(`paymentAmount-${tabType}-${accountId}`).value = remaining;
                 }
+            }
+        }
+        
+        // Função para alternar o formulário de observação
+        function toggleObservationForm(accountId, tabType) {
+            const form = document.getElementById(`observationForm-${tabType}-${accountId}`);
+            if (form.style.display === 'block') {
+                form.style.display = 'none';
+            } else {
+                form.style.display = 'block';
+                // Fechar outros formulários abertos
+                document.querySelectorAll(`.observation-form`).forEach(f => {
+                    if (f.id !== `observationForm-${tabType}-${accountId}`) f.style.display = 'none';
+                });
+                document.querySelectorAll(`.add-product-form`).forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.payment-form`).forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.add-quantity-form`).forEach(f => f.style.display = 'none');
+            }
+        }
+        
+        // Função para alternar o formulário de adicionar quantidade
+        function toggleAddQuantityForm(accountId, productIndex, tabType) {
+            const form = document.getElementById(`addQuantityForm-${tabType}-${accountId}-${productIndex}`);
+            if (form.style.display === 'block') {
+                form.style.display = 'none';
+            } else {
+                form.style.display = 'block';
+                // Fechar outros formulários abertos
+                document.querySelectorAll(`.add-quantity-form`).forEach(f => {
+                    if (f.id !== `addQuantityForm-${tabType}-${accountId}-${productIndex}`) f.style.display = 'none';
+                });
+                document.querySelectorAll(`.add-product-form`).forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.payment-form`).forEach(f => f.style.display = 'none');
+                document.querySelectorAll(`.observation-form`).forEach(f => f.style.display = 'none');
             }
         }
         
@@ -1182,6 +1394,7 @@
             const productName = document.getElementById('productName').value;
             const productQuantity = parseInt(document.getElementById('productQuantity').value);
             const productValue = parseFloat(document.getElementById('productValue').value);
+            const observation = document.getElementById('observation').value;
             
             // Validar os dados
             if (!customerName || !phoneNumber || !productName || isNaN(productQuantity) || productQuantity <= 0 || isNaN(productValue) || productValue <= 0) {
@@ -1199,7 +1412,8 @@
                     value: productValue
                 }],
                 payments: [],
-                creationDate: new Date().toISOString()
+                creationDate: new Date().toISOString(),
+                observation: observation || ''
             };
             
             // Adicionar ao Firebase
@@ -1328,6 +1542,10 @@
                                 product.quantity = 1;
                             }
                         });
+                    }
+                    // Garantir que contas antigas tenham o campo observation
+                    if (!account.observation) {
+                        account.observation = '';
                     }
                     accounts.push(account);
                 });
