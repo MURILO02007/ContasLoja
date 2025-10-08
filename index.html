@@ -23,6 +23,8 @@
             --light-orange: #FFF3E0;
             --blue: #2196F3;
             --light-blue: #E3F2FD;
+            --whatsapp: #25D366;
+            --light-whatsapp: #E8F7EA;
         }
         
         * {
@@ -164,6 +166,15 @@
         
         .btn-delete:hover {
             background-color: #d32f2f;
+            transform: translateY(-2px);
+        }
+        
+        .btn-whatsapp {
+            background-color: var(--whatsapp);
+        }
+        
+        .btn-whatsapp:hover {
+            background-color: #128C7E;
             transform: translateY(-2px);
         }
         
@@ -831,6 +842,64 @@
             }
         }
         
+        // Função para enviar conta para o WhatsApp
+        function sendToWhatsApp(accountId) {
+            const account = accounts.find(acc => acc.id === accountId);
+            if (!account) return;
+            
+            const total = calculateTotal(account.products);
+            const paid = calculatePaid(account.payments);
+            const remaining = total - paid;
+            const daysSinceCreation = getDaysSinceCreation(account.creationDate);
+            
+            // Formatar o número de telefone (remover caracteres não numéricos e adicionar 55 para Brasil)
+            let phoneNumber = account.phoneNumber.replace(/\D/g, '');
+            if (phoneNumber.startsWith('0')) {
+                phoneNumber = phoneNumber.substring(1);
+            }
+            if (!phoneNumber.startsWith('55')) {
+                phoneNumber = '55' + phoneNumber;
+            }
+            
+            // Criar mensagem detalhada
+            let message = `*GAMA NOVAES - CONTA A PAGAR*\n\n`;
+            message += `*Cliente:* ${account.customerName}\n`;
+            message += `*Data da conta:* ${formatDate(new Date(account.creationDate))} (${daysSinceCreation} dias)\n\n`;
+            message += `*PRODUTOS:*\n`;
+            
+            account.products.forEach((product, index) => {
+                message += `▸ ${product.name}\n`;
+                message += `  Quantidade: ${product.quantity}\n`;
+                message += `  Valor unitário: ${formatCurrency(product.value)}\n`;
+                message += `  Subtotal: ${formatCurrency(product.value * product.quantity)}\n\n`;
+            });
+            
+            message += `*RESUMO FINANCEIRO:*\n`;
+            message += `Total da conta: ${formatCurrency(total)}\n`;
+            
+            if (paid > 0) {
+                message += `Valor já pago: ${formatCurrency(paid)}\n`;
+                message += `*Valor pendente: ${formatCurrency(remaining)}*\n\n`;
+            } else {
+                message += `*Valor total a pagar: ${formatCurrency(total)}*\n\n`;
+            }
+            
+            if (account.observation) {
+                message += `*Observação:* ${account.observation}\n\n`;
+            }
+            
+            message += `_Para mais informações, entre em contato conosco._`;
+            
+            // Codificar a mensagem para URL
+            const encodedMessage = encodeURIComponent(message);
+            
+            // Criar URL do WhatsApp
+            const whatsappUrl = `https://wa.me/${phoneNumber}?text=${encodedMessage}`;
+            
+            // Abrir em nova aba
+            window.open(whatsappUrl, '_blank');
+        }
+        
         // Função para apagar uma conta
         async function deleteAccount(accountId, accountName) {
             if (confirm(`Tem certeza que deseja APAGAR permanentemente a conta de ${accountName}? Esta ação não pode ser desfeita!`)) {
@@ -1054,6 +1123,7 @@
                     
                     <div class="actions">
                         ${hasProducts ? `<button class="btn-pay" onclick="togglePaymentForm('${account.id}', 'active')">Registrar Pagamento</button>` : ''}
+                        <button class="btn-whatsapp" onclick="sendToWhatsApp('${account.id}')">Enviar para WhatsApp</button>
                         <button class="btn-secondary" onclick="toggleAddProductForm('${account.id}', 'active')">+ Produto</button>
                         <button class="btn-secondary" onclick="toggleObservationForm('${account.id}', 'active')">${account.observation ? 'Editar Observação' : 'Adicionar Observação'}</button>
                         <button class="btn-delete" onclick="deleteAccount('${account.id}', '${account.customerName}')">Apagar Conta</button>
